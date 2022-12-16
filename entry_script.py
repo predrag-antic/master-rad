@@ -3,7 +3,6 @@ import numpy as np
 import tensorflow as tf
 import joblib
 import requests
-# from azureml.monitoring import ModelDataCollector
 from azureml.contrib.services.aml_request import rawhttp
 from azureml.contrib.services.aml_response import AMLResponse
 
@@ -12,9 +11,6 @@ def init():
 
     model_root = os.getenv("AZUREML_MODEL_DIR")
     model_folder = "keras-model.pkl"
-
-    # inputs_dc = ModelDataCollector("keras-model", "inference-inputs", "image-url")
-    # prediction_dc = ModelDataCollector("keras-model", "inference-predictions")
 
     if (model_root == None):
         model_root = ".."
@@ -29,14 +25,14 @@ def run(request):
 
     if request.method == 'POST':
         image = request.form['name']
-        # inputs_dc.collect(image)
         image = process_image(image)
         image_batch = tf.data.Dataset.from_tensor_slices([tf.constant(image)]).batch(32)
         prediction = model.predict(image_batch)
         preds = []
         for i in range(len(prediction)):
             preds.append(get_pred_label(prediction[i], classes))
-        # prediction_dc.collect(preds[0])
+            
+        print('Input:' + request.form['name'] + '; Prediction:' + preds[0])
         return preds[0]
     else:
         return AMLResponse('Not a POST method, try again.', 500)

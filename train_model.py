@@ -32,9 +32,9 @@ ws = connect_to_azure_workspace()
 
 mlflow.tensorflow.autolog()
 # MLflow server
-# mlflow.set_tracking_uri('localhost:5000')
+mlflow.set_tracking_uri('http://localhost:5000')
 # AzureML server
-mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())
+# mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())
 
 mlflow.set_experiment(args.experiment_name)
 
@@ -62,6 +62,12 @@ def main():
 
         mlflow.log_metric('test_loss', test_loss)
         mlflow.log_metric('test_accuracy', test_acc)
+
+        logged_model_info = mlflow.keras.log_model(
+            model, 
+            registered_model_name='keras-model', 
+            artifact_path='keras-model')
+        print(logged_model_info.model_uri, logged_model_info.artifact_path)
 
         predictions = get_predictions(model, val_data)
         _, val_labels = unbatchify(val_data, classes)
@@ -91,7 +97,7 @@ def main():
             deploy_model(reg_model, ws)
         else: 
             print(f'Experiment {args.experiment_name} is finished.')
-            
+
  
 def get_filenames():
     return tf.io.gfile.glob(str(f'{args.train_dataset}/*/*'))
@@ -160,7 +166,7 @@ def create_data_batches(X, y=None, batch_size=args.batch_size, valid_data=False,
 
 def train_model(model, train_data, val_data):
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_accuracy", 
-                                                    patience=5)
+                                                    patience=3)
 
     print("Starting model training...")
 
